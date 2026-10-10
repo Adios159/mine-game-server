@@ -45,10 +45,27 @@ if not ADMIN_KEY:
         "CRITICAL: 'ADMIN_KEY' 환경 변수가 설정되지 않았습니다. 보안을 위해 서버 시작을 중단합니다."
     )
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./ranking.db")
-# SQLAlchemy 2.x 호환: postgres:// -> postgresql:// 자동 변환
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+# 1. 환경 변수 문자열 앞뒤 공백 및 따옴표 정제
+raw_db_url = os.getenv("DATABASE_URL", "").strip().strip("'\"")
+
+if not raw_db_url:
+    DATABASE_URL = "sqlite:///./ranking.db"
+else:
+    # 2. psycopg(v3) 명시 바인딩: postgresql+psycopg:// 로 통일
+    if raw_db_url.startswith("postgres://"):
+        raw_db_url = raw_db_url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif raw_db_url.startswith("postgresql://"):
+        raw_db_url = raw_db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    # 3. Neon 연결 문자열에 포함될 수 있는 channel_binding 파라미터 안전하게 제거
+    if "&channel_binding=require" in raw_db_url:
+        raw_db_url = raw_db_url.replace("&channel_binding=require", "")
+    elif "?channel_binding=require&" in raw_db_url:
+        raw_db_url = raw_db_url.replace("channel_binding=require&", "")
+    elif "?channel_binding=require" in raw_db_url:
+        raw_db_url = raw_db_url.replace("?channel_binding=require", "")
+
+    DATABASE_URL = raw_db_url
 
 engine_kwargs: Dict[str, Any] = {"pool_pre_ping": True}
 if "sqlite" in DATABASE_URL:
@@ -62,7 +79,6 @@ THEORETICAL_MAX_SCORE = 3_630_000  # 220개 * 5,000점 * 3.3배율 (이론상 �
 MIN_PLAY_SECONDS = 115
 VALIDATE_SCORE_LOGIC = os.getenv("VALIDATE_SCORE_LOGIC", "true").lower() == "true"
 ALLOWED_ORE_TYPES: Set[str] = {"A", "B", "C", "D", "E"}
-
 # ==========================================
 # 2. 게임 밸런스 데이터 로드 (S-04 공유 테이블)
 # ==========================================
