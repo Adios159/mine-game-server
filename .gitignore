@@ -1,0 +1,4 @@
+.env
+game_data.json
+ranking.db
+/__pycache__
