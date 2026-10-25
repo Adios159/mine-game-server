@@ -597,7 +597,11 @@ def finish_play(
 
 # 7.5 GET /ranking
 @app.get("/api/v1/ranking")
-def get_ranking(student_id: Optional[str] = Query(None), db: Session = Depends(get_db)):
+def get_ranking(
+    student_id: Optional[str] = Query(None),
+    limit: int = Query(10, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
     all_ranks = compute_rankings(db)
     top_10 = [{
         "rank": r["rank"],
