@@ -603,14 +603,14 @@ def get_ranking(
     db: Session = Depends(get_db),
 ):
     all_ranks = compute_rankings(db)
-    top_10 = [{
+    top = [{
         "rank": r["rank"],
         "name": r["name"],
         "department": r["department"],
         "student_id_masked": r["student_id_masked"],
         "best_score": r["best_score"],
         "achieved_at": r["achieved_at"],
-    } for r in all_ranks[:10]]
+    } for r in all_ranks[:limit]]
 
     me_info = None
     if student_id:
@@ -624,7 +624,7 @@ def get_ranking(
 
     return {
         "total_players": len(all_ranks),
-        "top": top_10,
+        "top": top,
         "me": me_info,
     }
 
